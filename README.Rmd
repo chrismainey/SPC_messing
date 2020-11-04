@@ -1,0 +1,76 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+xmr <-
+  function(x, index){
+    require(data.table)
+    require(ggplot2)
+    
+    lag <- data.table::shift(x, n=1)
+    mr <- abs(x-lag)
+    mean_s <- mean(x)
+    mean_mr <- mean(na.omit(mr))
+    
+    UCL <- mean_s + (3*mean_mr / 1.128)
+    LCL <- mean_s - (3*mean_mr / 1.128)
+    
+    rule <- ifelse(x>UCL,1,ifelse(x<LCL,3,2))
+    
+    ggplot(data.frame(index, x), aes(x=index, y=x))+
+      geom_point(aes(col=factor(rule)))+
+      geom_line()+
+      geom_hline(yintercept=mean_s, col="black", linetype="dashed")+
+      geom_hline(yintercept=UCL, col="dodgerblue2")+
+      geom_hline(yintercept=LCL, col="purple")
+  }
+
+
+
+```
+
+# Quick SPC messing
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+This is a quick repository whilst I was messing around with building an XmR after someone asked for it.
+THere are tow scripts, one which is a working script `xmr`, and the other is a function that can be used on a `data.frame` where we have and index such as data and a value.
+
+It's just a shell, and I've only added a single rule for outside control limits, but you'd add more in real use.
+
+### Here's how to use it:
+
+Firstly, create a data set at random with a 'seed' so it's the same.  You'd replace this with your real data.
+```{r example}
+set.seed(123)
+
+dt <- data.frame(id = seq(30),
+                 val = rnorm(30, 30,5))
+
+```
+
+I'm going to force a couple of outliers here so you can see them:
+
+```{r outlier}
+dt$val[10] <- dt$val[10] +10
+dt$val[11] <- dt$val[11] +20
+
+```
+
+
+Now let's plot it:
+
+```{r xmrplot}
+xmr(x=dt$val, index=dt$id)
+```
+
+
